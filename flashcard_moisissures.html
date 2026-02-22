@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcard – Moisissures et Thermique</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #112240;
+    --navy-light: #1a3460;
+    --accent: #4a9eff;
+    --accent-soft: #7bbcff;
+    --white: #f0f6ff;
+    --white-dim: rgba(240,246,255,0.7);
+    --white-subtle: rgba(240,246,255,0.15);
+    --success: #3ecf8e;
+    --warning: #f6c90e;
+    --locked: rgba(240,246,255,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(74,158,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(74,158,255,0.06) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(74,158,255,0.4);
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+  header h1 {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+  header p {
+    color: var(--white-dim);
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+  /* Progress bar */
+  .progress-wrapper {
+    margin-bottom: 2rem;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--white-dim);
+    margin-bottom: 0.4rem;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--white-subtle);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* Part nav tabs */
+  .parts-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .part-tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: default;
+    border: 1px solid transparent;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .part-tab.locked {
+    background: var(--locked);
+    border-color: rgba(240,246,255,0.08);
+    color: rgba(240,246,255,0.3);
+  }
+  .part-tab.locked::after {
+    content: '🔒';
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 2px;
+  }
+  .part-tab.available {
+    background: var(--navy-light);
+    border-color: rgba(74,158,255,0.3);
+    color: var(--white-dim);
+    cursor: pointer;
+  }
+  .part-tab.active {
+    background: var(--accent);
+    color: var(--navy);
+    border-color: var(--accent);
+  }
+  .part-tab.done {
+    background: rgba(62,207,142,0.15);
+    border-color: var(--success);
+    color: var(--success);
+    cursor: pointer;
+  }
+  .part-tab.done::after {
+    content: '✓';
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  /* Section card */
+  .section {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+  .section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Course card */
+  .course-card {
+    background: var(--navy-mid);
+    border: 1px solid rgba(74,158,255,0.2);
+    border-radius: 16px;
+    padding: 1.8rem;
+    margin-bottom: 1.8rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .course-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .course-card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .part-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    background: rgba(74,158,255,0.15);
+    color: var(--accent);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+  .course-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+  .course-card p, .course-card li {
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: var(--white-dim);
+    margin-bottom: 0.7rem;
+  }
+  .course-card ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0.7rem;
+  }
+  .course-card .highlight {
+    background: rgba(74,158,255,0.1);
+    border-left: 3px solid var(--accent);
+    padding: 0.8rem 1rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+  }
+  .course-card .highlight strong {
+    color: var(--accent-soft);
+  }
+  .example-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    margin-top: 0.8rem;
+    font-size: 0.82rem;
+    color: var(--white-dim);
+  }
+  .example-box::before {
+    content: '💡 Exemple concret';
+    display: block;
+    font-weight: 600;
+    color: var(--warning);
+    margin-bottom: 0.4rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Quiz */
+  .quiz-wrapper { }
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .score-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--white-dim);
+  }
+  .score-display span { color: var(--accent); font-weight: 600; }
+
+  .question-card {
+    background: var(--navy-mid);
+    border: 1px solid rgba(240,246,255,0.1);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s;
+  }
+  .question-card.answered-correct { border-color: var(--success); }
+  .question-card.answered-wrong { border-color: rgba(255,80,80,0.5); }
+
+  .question-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--white-dim);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .question-text {
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    color: var(--white);
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .option-btn {
+    background: rgba(240,246,255,0.05);
+    border: 1px solid rgba(240,246,255,0.1);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    color: var(--white);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.84rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: rgba(74,158,255,0.12);
+    border-color: rgba(74,158,255,0.4);
+  }
+  .option-btn .letter {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: rgba(74,158,255,0.12);
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .option-btn.correct {
+    background: rgba(62,207,142,0.15);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .option-btn.correct .letter { background: var(--success); color: var(--navy); }
+  .option-btn.wrong {
+    background: rgba(255,80,80,0.1);
+    border-color: rgba(255,80,80,0.5);
+    color: rgba(255,120,120,0.9);
+  }
+  .option-btn:disabled { cursor: default; }
+
+  .submit-area { margin-top: 1.5rem; text-align: center; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--navy);
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 2rem;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: var(--accent-soft); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .result-banner {
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: none;
+  }
+  .result-banner.show { display: block; }
+  .result-banner.success {
+    background: rgba(62,207,142,0.15);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+  .result-banner.fail {
+    background: rgba(246,201,14,0.1);
+    border: 1px solid var(--warning);
+    color: var(--warning);
+  }
+
+  .btn-retry {
+    margin-top: 1rem;
+    background: transparent;
+    border: 1px solid var(--warning);
+    color: var(--warning);
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-retry:hover { background: rgba(246,201,14,0.1); }
+
+  .btn-next {
+    margin-top: 1rem;
+    background: var(--success);
+    border: none;
+    color: var(--navy);
+    border-radius: 8px;
+    padding: 0.7rem 2rem;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-next:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  /* Congrats */
+  .congrats {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--navy-mid);
+    border: 1px solid rgba(62,207,142,0.3);
+    border-radius: 20px;
+  }
+  .congrats .trophy { font-size: 4rem; margin-bottom: 1rem; }
+  .congrats h2 { font-size: 1.6rem; color: var(--success); margin-bottom: 0.8rem; }
+  .congrats p { color: var(--white-dim); font-size: 0.9rem; line-height: 1.7; }
+  .confetti-line {
+    font-size: 1.5rem;
+    letter-spacing: 0.5rem;
+    margin: 1.2rem 0;
+  }
+
+  /* Key terms */
+  .key-term {
+    color: var(--accent-soft);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">Seconde Bac Pro · Thermique du bâtiment</div>
+    <h1>Moisissures, transfert thermique<br>et condensation</h1>
+    <p>Complétez chaque partie avec un score parfait pour progresser</p>
+  </header>
+
+  <div class="progress-wrapper">
+    <div class="progress-label">
+      <span>Progression globale</span>
+      <span id="global-progress">0 / 4 parties</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="parts-nav">
+    <div class="part-tab active" id="tab-0" onclick="goToSection(0)">Situation<br>& Constat</div>
+    <div class="part-tab locked" id="tab-1">Transfert<br>thermique</div>
+    <div class="part-tab locked" id="tab-2">Point de rosée<br>& Condensation</div>
+    <div class="part-tab locked" id="tab-3">Chaleur latente<br>& Moisissures</div>
+  </div>
+
+  <!-- ======================== PARTIE 1 ======================== -->
+  <div class="section active" id="section-0">
+    <div class="course-card">
+      <h2><span class="part-number">PARTIE 01</span></h2>
+      <h3>La situation et le constat de M. Martin</h3>
+      <p>M. Martin, artisan en agencement, est appelé chez un client qui se plaint de <span class="key-term">moisissures noires</span> apparaissant chaque hiver dans les angles de sa chambre. La chambre est exposée au <span class="key-term">nord</span> – c'est important car les murs nord reçoivent très peu de soleil et sont donc plus froids.</p>
+      <p>En relevant les températures, M. Martin note :</p>
+      <ul>
+        <li>Air intérieur (ambiant) : <strong>19 °C</strong></li>
+        <li>Surface intérieure du mur nord : <strong>14 °C</strong></li>
+        <li>Température extérieure : <strong>3 °C</strong></li>
+      </ul>
+      <div class="highlight">
+        <strong>Observation clé :</strong> le radiateur fonctionne et la pièce semble chaude, pourtant la surface du mur est bien plus froide que l'air. Ce n'est pas une panne, c'est le comportement normal d'un mur mal isolé en hiver.
+      </div>
+      <div class="example-box">
+        Imagine que tu poses ta main sur le mur d'une chambre froide en hiver : ta main se refroidit rapidement. C'est parce que le mur est plus froid que toi. C'est exactement ce que ressent l'air de la pièce au contact du mur.
+      </div>
+    </div>
+
+    <div class="quiz-wrapper" id="quiz-0">
+      <div class="score-bar">
+        <div class="score-display">Score : <span id="score-0">0</span> / 5</div>
+      </div>
+
+      <div class="question-card" id="q0-0">
+        <div class="question-meta">Question 1 · Contexte</div>
+        <div class="question-text">Pourquoi M. Martin est-il appelé chez ce client ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(0,0,false,this)"><span class="letter">A</span>Le radiateur ne fonctionne pas</button>
+          <button class="option-btn" onclick="answer(0,0,true,this)"><span class="letter">B</span>Des moisissures noires apparaissent chaque hiver dans les angles</button>
+          <button class="option-btn" onclick="answer(0,0,false,this)"><span class="letter">C</span>La chambre est trop chaude</button>
+          <button class="option-btn" onclick="answer(0,0,false,this)"><span class="letter">D</span>Les fenêtres sont cassées</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q0-1">
+        <div class="question-meta">Question 2 · Contexte</div>
+        <div class="question-text">Quelle est la température de la surface intérieure du mur nord relevée par M. Martin ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(0,1,false,this)"><span class="letter">A</span>19 °C</button>
+          <button class="option-btn" onclick="answer(0,1,false,this)"><span class="letter">B</span>3 °C</button>
+          <button class="option-btn" onclick="answer(0,1,true,this)"><span class="letter">C</span>14 °C</button>
+          <button class="option-btn" onclick="answer(0,1,false,this)"><span class="letter">D</span>11 °C</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q0-2">
+        <div class="question-meta">Question 3 · Vocabulaire</div>
+        <div class="question-text">Que désigne le terme « artisan en agencement » ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(0,2,false,this)"><span class="letter">A</span>Un spécialiste en chauffage</button>
+          <button class="option-btn" onclick="answer(0,2,true,this)"><span class="letter">B</span>Un professionnel qui conçoit et réalise des travaux d'aménagement intérieur</button>
+          <button class="option-btn" onclick="answer(0,2,false,this)"><span class="letter">C</span>Un vendeur de meubles</button>
+          <button class="option-btn" onclick="answer(0,2,false,this)"><span class="letter">D</span>Un technicien en isolation acoustique</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q0-3">
+        <div class="question-meta">Question 4 · Vocabulaire</div>
+        <div class="question-text">Que signifie « air ambiant » dans ce contexte ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(0,3,false,this)"><span class="letter">A</span>L'air qui vient de l'extérieur</button>
+          <button class="option-btn" onclick="answer(0,3,false,this)"><span class="letter">B</span>L'air produit par le radiateur</button>
+          <button class="option-btn" onclick="answer(0,3,true,this)"><span class="letter">C</span>L'air présent dans la pièce, autour des personnes et des objets</button>
+          <button class="option-btn" onclick="answer(0,3,false,this)"><span class="letter">D</span>L'air froid du mur</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q0-4">
+        <div class="question-meta">Question 5 · Application technique</div>
+        <div class="question-text">Dans une pièce, l'air est à 20 °C et le mur est à 10 °C. Quelle affirmation est correcte ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(0,4,false,this)"><span class="letter">A</span>Le mur produit du froid qui refroidit la pièce</button>
+          <button class="option-btn" onclick="answer(0,4,false,this)"><span class="letter">B</span>L'air et le mur sont à la même température</button>
+          <button class="option-btn" onclick="answer(0,4,true,this)"><span class="letter">C</span>L'air cède de la chaleur au mur car il est plus chaud que celui-ci</button>
+          <button class="option-btn" onclick="answer(0,4,false,this)"><span class="letter">D</span>La chaleur se transfère du mur vers l'air</button>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <div class="result-banner" id="result-0"></div>
+        <button class="btn-retry" id="retry-0" style="display:none" onclick="retryQuiz(0)">↺ Recommencer cette partie</button>
+        <button class="btn-next" id="next-0" style="display:none" onclick="nextSection(0)">Partie suivante →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== PARTIE 2 ======================== -->
+  <div class="section" id="section-1">
+    <div class="course-card">
+      <h2><span class="part-number">PARTIE 02</span></h2>
+      <h3>Le transfert thermique dans la paroi</h3>
+      <p>Dans un mur, la chaleur se déplace toujours du côté <span class="key-term">chaud vers le côté froid</span>. C'est une loi physique fondamentale : la chaleur ne peut pas aller spontanément du froid vers le chaud.</p>
+      <p>En hiver, la chaleur de la pièce (19 °C) traverse progressivement le mur pour rejoindre l'extérieur froid (3 °C). Cette traversée crée ce qu'on appelle un <span class="key-term">gradient de température</span> : la température baisse progressivement à travers l'épaisseur du mur, de 19 °C côté intérieur jusqu'à 3 °C côté extérieur.</p>
+      <div class="highlight">
+        <strong>Gradient de température</strong> = variation progressive de la température à travers un matériau. Plus le mur est épais et bien isolant, plus cette variation est lente et régulière — et plus la surface intérieure reste chaude.
+      </div>
+      <p>C'est pourquoi la surface intérieure d'un mur mal isolé est nettement plus froide que l'air de la pièce : la chaleur « fuit » rapidement à travers la paroi.</p>
+      <div class="example-box">
+        Imagine un couloir avec une fenêtre ouverte en hiver : plus tu t'approches de la fenêtre, plus il fait froid. C'est la même idée — la température varie progressivement de l'intérieur vers l'extérieur.
+      </div>
+    </div>
+
+    <div class="quiz-wrapper" id="quiz-1">
+      <div class="score-bar">
+        <div class="score-display">Score : <span id="score-1">0</span> / 5</div>
+      </div>
+
+      <div class="question-card" id="q1-0">
+        <div class="question-meta">Question 1 · Contexte</div>
+        <div class="question-text">Dans quel sens la chaleur se transfère-t-elle dans le mur de la chambre en hiver ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(1,0,false,this)"><span class="letter">A</span>De l'extérieur (3 °C) vers l'intérieur (19 °C)</button>
+          <button class="option-btn" onclick="answer(1,0,true,this)"><span class="letter">B</span>De l'intérieur (19 °C) vers l'extérieur (3 °C)</button>
+          <button class="option-btn" onclick="answer(1,0,false,this)"><span class="letter">C</span>La chaleur reste bloquée dans le mur</button>
+          <button class="option-btn" onclick="answer(1,0,false,this)"><span class="letter">D</span>La chaleur ne se transfère pas dans un mur</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q1-1">
+        <div class="question-meta">Question 2 · Contexte</div>
+        <div class="question-text">Pourquoi la surface intérieure du mur est-elle plus froide que l'air de la pièce ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(1,1,false,this)"><span class="letter">A</span>Parce que le radiateur est trop loin du mur</button>
+          <button class="option-btn" onclick="answer(1,1,true,this)"><span class="letter">B</span>Parce que la chaleur fuit à travers le mur mal isolé vers l'extérieur froid</button>
+          <button class="option-btn" onclick="answer(1,1,false,this)"><span class="letter">C</span>Parce que le mur est peint en foncé</button>
+          <button class="option-btn" onclick="answer(1,1,false,this)"><span class="letter">D</span>Parce que la chambre est au nord et reçoit le soleil</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q1-2">
+        <div class="question-meta">Question 3 · Vocabulaire</div>
+        <div class="question-text">Que signifie « gradient de température » ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(1,2,false,this)"><span class="letter">A</span>La température maximale atteinte dans une pièce</button>
+          <button class="option-btn" onclick="answer(1,2,false,this)"><span class="letter">B</span>L'écart de température entre le jour et la nuit</button>
+          <button class="option-btn" onclick="answer(1,2,true,this)"><span class="letter">C</span>La variation progressive de la température à travers l'épaisseur d'un matériau</button>
+          <button class="option-btn" onclick="answer(1,2,false,this)"><span class="letter">D</span>La vitesse à laquelle un radiateur chauffe une pièce</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q1-3">
+        <div class="question-meta">Question 4 · Vocabulaire</div>
+        <div class="question-text">Comment appelle-t-on un matériau qui s'oppose au transfert de chaleur ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(1,3,false,this)"><span class="letter">A</span>Un conducteur thermique</button>
+          <button class="option-btn" onclick="answer(1,3,true,this)"><span class="letter">B</span>Un isolant thermique</button>
+          <button class="option-btn" onclick="answer(1,3,false,this)"><span class="letter">C</span>Un réfrigérant</button>
+          <button class="option-btn" onclick="answer(1,3,false,this)"><span class="letter">D</span>Un dilatant</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q1-4">
+        <div class="question-meta">Question 5 · Application technique</div>
+        <div class="question-text">Si l'on ajoute une couche de laine de verre à l'intérieur du mur nord, que se passera-t-il pour la température de la surface intérieure ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(1,4,false,this)"><span class="letter">A</span>La surface intérieure sera encore plus froide</button>
+          <button class="option-btn" onclick="answer(1,4,true,this)"><span class="letter">B</span>La surface intérieure sera plus chaude car le transfert de chaleur est ralenti</button>
+          <button class="option-btn" onclick="answer(1,4,false,this)"><span class="letter">C</span>La surface intérieure restera à 14 °C quoi qu'il arrive</button>
+          <button class="option-btn" onclick="answer(1,4,false,this)"><span class="letter">D</span>La température extérieure augmentera</button>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <div class="result-banner" id="result-1"></div>
+        <button class="btn-retry" id="retry-1" style="display:none" onclick="retryQuiz(1)">↺ Recommencer cette partie</button>
+        <button class="btn-next" id="next-1" style="display:none" onclick="nextSection(1)">Partie suivante →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== PARTIE 3 ======================== -->
+  <div class="section" id="section-2">
+    <div class="course-card">
+      <h2><span class="part-number">PARTIE 03</span></h2>
+      <h3>Le point de rosée et la condensation</h3>
+      <p>L'air contient toujours de la <span class="key-term">vapeur d'eau</span> invisible — produite par la respiration, la transpiration, la cuisine, etc. Cette vapeur ne reste à l'état gazeux que si la température de l'air est suffisamment élevée.</p>
+      <p>Le <span class="key-term">point de rosée</span> est la température en dessous de laquelle l'air ne peut plus retenir toute son humidité : la vapeur d'eau se transforme alors en fines gouttelettes liquides. C'est ce qu'on appelle la <span class="key-term">condensation</span>.</p>
+      <div class="highlight">
+        <strong>Dans la chambre :</strong> avec une humidité relative de 60–65 %, le point de rosée se situe entre 11 et 12 °C. Quand l'air (19 °C) touche la surface du mur (14 °C), il se refroidit localement. Dans les angles, encore plus froids, la température passe sous 11–12 °C → condensation !
+      </div>
+      <p>L'<span class="key-term">humidité relative</span> (HR) exprime en pourcentage la quantité de vapeur d'eau présente dans l'air par rapport à la quantité maximale qu'il pourrait contenir à cette même température. À 100 % HR, l'air est saturé et la condensation commence.</p>
+      <div class="example-box">
+        C'est le même phénomène que sur un verre de boisson froide en été : la surface froide du verre refroidit l'air autour, qui se retrouve au-dessous du point de rosée, et des gouttelettes apparaissent sur le verre.
+      </div>
+    </div>
+
+    <div class="quiz-wrapper" id="quiz-2">
+      <div class="score-bar">
+        <div class="score-display">Score : <span id="score-2">0</span> / 5</div>
+      </div>
+
+      <div class="question-card" id="q2-0">
+        <div class="question-meta">Question 1 · Contexte</div>
+        <div class="question-text">Où la condensation se produit-elle en priorité dans la chambre de M. Martin ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(2,0,false,this)"><span class="letter">A</span>Sur le plafond, car l'air chaud monte</button>
+          <button class="option-btn" onclick="answer(2,0,true,this)"><span class="letter">B</span>Dans les angles du mur, car ils sont encore plus froids</button>
+          <button class="option-btn" onclick="answer(2,0,false,this)"><span class="letter">C</span>Près du radiateur, car c'est l'endroit le plus chaud</button>
+          <button class="option-btn" onclick="answer(2,0,false,this)"><span class="letter">D</span>Sur le sol, car c'est le plus proche de l'extérieur</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q2-1">
+        <div class="question-meta">Question 2 · Contexte</div>
+        <div class="question-text">Quelle est la valeur approximative du point de rosée dans cette chambre (HR ≈ 60–65 %) ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(2,1,false,this)"><span class="letter">A</span>3 à 5 °C</button>
+          <button class="option-btn" onclick="answer(2,1,false,this)"><span class="letter">B</span>19 °C</button>
+          <button class="option-btn" onclick="answer(2,1,true,this)"><span class="letter">C</span>11 à 12 °C</button>
+          <button class="option-btn" onclick="answer(2,1,false,this)"><span class="letter">D</span>0 °C</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q2-2">
+        <div class="question-meta">Question 3 · Vocabulaire</div>
+        <div class="question-text">Qu'est-ce que le « point de rosée » ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(2,2,false,this)"><span class="letter">A</span>La température à laquelle l'eau bout</button>
+          <button class="option-btn" onclick="answer(2,2,true,this)"><span class="letter">B</span>La température en dessous de laquelle la vapeur d'eau de l'air se condense en gouttelettes</button>
+          <button class="option-btn" onclick="answer(2,2,false,this)"><span class="letter">C</span>La quantité maximale d'eau qu'un mur peut absorber</button>
+          <button class="option-btn" onclick="answer(2,2,false,this)"><span class="letter">D</span>La différence de température entre l'intérieur et l'extérieur</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q2-3">
+        <div class="question-meta">Question 4 · Vocabulaire</div>
+        <div class="question-text">Que signifie une humidité relative de 100 % ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(2,3,false,this)"><span class="letter">A</span>L'air est très sec</button>
+          <button class="option-btn" onclick="answer(2,3,false,this)"><span class="letter">B</span>Il pleut à l'intérieur</button>
+          <button class="option-btn" onclick="answer(2,3,true,this)"><span class="letter">C</span>L'air est saturé en vapeur d'eau et ne peut plus en contenir davantage</button>
+          <button class="option-btn" onclick="answer(2,3,false,this)"><span class="letter">D</span>La température est de 100 °C</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q2-4">
+        <div class="question-meta">Question 5 · Application technique</div>
+        <div class="question-text">Dans une pièce avec un point de rosée à 13 °C, une surface est à 10 °C. Que se passe-t-il ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(2,4,false,this)"><span class="letter">A</span>Rien, l'air reste sec</button>
+          <button class="option-btn" onclick="answer(2,4,true,this)"><span class="letter">B</span>La vapeur d'eau se condense sur la surface car sa température est sous le point de rosée</button>
+          <button class="option-btn" onclick="answer(2,4,false,this)"><span class="letter">C</span>La surface se met à chauffer</button>
+          <button class="option-btn" onclick="answer(2,4,false,this)"><span class="letter">D</span>Le point de rosée monte à 15 °C</button>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <div class="result-banner" id="result-2"></div>
+        <button class="btn-retry" id="retry-2" style="display:none" onclick="retryQuiz(2)">↺ Recommencer cette partie</button>
+        <button class="btn-next" id="next-2" style="display:none" onclick="nextSection(2)">Partie suivante →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== PARTIE 4 ======================== -->
+  <div class="section" id="section-3">
+    <div class="course-card">
+      <h2><span class="part-number">PARTIE 04</span></h2>
+      <h3>Chaleur latente et développement des moisissures</h3>
+      <p>Quand la vapeur d'eau se condense (passage de l'état gazeux à l'état liquide), elle libère de l'énergie appelée <span class="key-term">chaleur latente</span>. « Latente » signifie « cachée » : cette énergie n'entraîne pas de changement de température visible, mais accompagne tout changement d'état.</p>
+      <p>À l'inverse, quand l'eau s'évapore, elle <em>absorbe</em> de la chaleur latente (c'est pourquoi on a froid en sortant d'une piscine).</p>
+      <div class="highlight">
+        <strong>Chaleur latente de condensation :</strong> lors de la condensation, la vapeur d'eau cède de l'énergie à la paroi, contribuant à maintenir la surface humide dans un état d'équilibre. L'eau ainsi déposée crée un <em>micro-environnement humide et peu ventilé</em>, idéal pour les moisissures.
+      </div>
+      <p>Les <span class="key-term">moisissures</span> sont des champignons microscopiques qui ont besoin de trois conditions pour se développer : une surface humide, peu de ventilation, et de l'obscurité. Les angles des murs nord condensants réunissent parfaitement ces trois conditions, nuit après nuit, tout l'hiver.</p>
+      <div class="example-box">
+        Pense à un pain de mie oublié dans un sac plastique fermé : l'humidité reste piégée, il n'y a pas d'air, et les moisissures apparaissent rapidement. C'est exactement ce qui se passe dans les angles du mur.
+      </div>
+    </div>
+
+    <div class="quiz-wrapper" id="quiz-3">
+      <div class="score-bar">
+        <div class="score-display">Score : <span id="score-3">0</span> / 5</div>
+      </div>
+
+      <div class="question-card" id="q3-0">
+        <div class="question-meta">Question 1 · Contexte</div>
+        <div class="question-text">Pourquoi les moisissures se développent-elles dans les angles du mur et non ailleurs dans la pièce ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(3,0,false,this)"><span class="letter">A</span>Parce que les angles reçoivent plus de lumière</button>
+          <button class="option-btn" onclick="answer(3,0,true,this)"><span class="letter">B</span>Parce que les angles sont encore plus froids, l'humidité s'y condense et crée un milieu humide et peu ventilé</button>
+          <button class="option-btn" onclick="answer(3,0,false,this)"><span class="letter">C</span>Parce que le radiateur ne peut pas chauffer les angles</button>
+          <button class="option-btn" onclick="answer(3,0,false,this)"><span class="letter">D</span>Parce que les moisissures aiment les surfaces peintes</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q3-1">
+        <div class="question-meta">Question 2 · Contexte</div>
+        <div class="question-text">À quel moment de l'année le phénomène de condensation et de développement des moisissures est-il le plus important ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(3,1,false,this)"><span class="letter">A</span>En été, car les températures sont élevées</button>
+          <button class="option-btn" onclick="answer(3,1,true,this)"><span class="letter">B</span>En hiver, car les parois sont très froides et l'écart avec l'air intérieur est maximal</button>
+          <button class="option-btn" onclick="answer(3,1,false,this)"><span class="letter">C</span>Au printemps, lors des pluies</button>
+          <button class="option-btn" onclick="answer(3,1,false,this)"><span class="letter">D</span>À n'importe quelle saison, cela ne change rien</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q3-2">
+        <div class="question-meta">Question 3 · Vocabulaire</div>
+        <div class="question-text">Qu'est-ce que la « chaleur latente » ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(3,2,false,this)"><span class="letter">A</span>La chaleur produite par un radiateur électrique</button>
+          <button class="option-btn" onclick="answer(3,2,true,this)"><span class="letter">B</span>L'énergie échangée lors d'un changement d'état (ex : vapeur → liquide) sans variation de température visible</button>
+          <button class="option-btn" onclick="answer(3,2,false,this)"><span class="letter">C</span>La chaleur stockée dans les murs épais</button>
+          <button class="option-btn" onclick="answer(3,2,false,this)"><span class="letter">D</span>La chaleur dégagée par les personnes dans une pièce</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q3-3">
+        <div class="question-meta">Question 4 · Vocabulaire</div>
+        <div class="question-text">Les moisissures sont :</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(3,3,false,this)"><span class="letter">A</span>Des bactéries qui se développent dans l'eau chaude</button>
+          <button class="option-btn" onclick="answer(3,3,true,this)"><span class="letter">B</span>Des champignons microscopiques qui se développent dans les milieux humides et peu ventilés</button>
+          <button class="option-btn" onclick="answer(3,3,false,this)"><span class="letter">C</span>Des particules minérales provenant du plâtre</button>
+          <button class="option-btn" onclick="answer(3,3,false,this)"><span class="letter">D</span>Des dépôts de calcaire laissés par l'eau</button>
+        </div>
+      </div>
+
+      <div class="question-card" id="q3-4">
+        <div class="question-meta">Question 5 · Application technique</div>
+        <div class="question-text">Pour empêcher le développement des moisissures, quelle solution est la plus efficace à long terme ?</div>
+        <div class="options">
+          <button class="option-btn" onclick="answer(3,4,false,this)"><span class="letter">A</span>Peindre les angles avec une peinture anti-moisissures</button>
+          <button class="option-btn" onclick="answer(3,4,false,this)"><span class="letter">B</span>Augmenter la puissance du radiateur</button>
+          <button class="option-btn" onclick="answer(3,4,true,this)"><span class="letter">C</span>Isoler correctement le mur pour relever la température de sa surface et éviter la condensation</button>
+          <button class="option-btn" onclick="answer(3,4,false,this)"><span class="letter">D</span>Fermer les fenêtres pour garder la chaleur</button>
+        </div>
+      </div>
+
+      <div class="submit-area">
+        <div class="result-banner" id="result-3"></div>
+        <button class="btn-retry" id="retry-3" style="display:none" onclick="retryQuiz(3)">↺ Recommencer cette partie</button>
+        <button class="btn-next" id="next-3" style="display:none" onclick="showCongrats()">🎉 Terminer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== CONGRATS ======================== -->
+  <div class="section" id="section-congrats">
+    <div class="congrats">
+      <div class="trophy">🏆</div>
+      <h2>Félicitations !</h2>
+      <div class="confetti-line">🎉 🌟 ✨ 🎊 ⭐</div>
+      <p>Tu as complété les <strong>4 parties</strong> avec un score parfait.<br>
+      Tu maîtrises maintenant les notions essentielles de l'énoncé :</p>
+      <br>
+      <p>✔ La situation de M. Martin et le constat des moisissures<br>
+      ✔ Le transfert thermique et le gradient de température dans la paroi<br>
+      ✔ Le point de rosée et le phénomène de condensation<br>
+      ✔ La chaleur latente et les conditions de développement des moisissures</p>
+      <br>
+      <p style="color:var(--accent-soft);">Tu es prêt·e pour aller plus loin dans l'analyse de ce cas pratique ! 💪</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // State
+  const state = {
+    unlocked: [true, false, false, false],
+    done: [false, false, false, false],
+    scores: [0, 0, 0, 0],
+    answered: [ [false,false,false,false,false], [false,false,false,false,false], [false,false,false,false,false], [false,false,false,false,false] ],
+    currentSection: 0
+  };
+
+  function updateTabs() {
+    for (let i = 0; i < 4; i++) {
+      const tab = document.getElementById('tab-' + i);
+      tab.className = 'part-tab';
+      if (state.done[i]) {
+        tab.classList.add('done');
+      } else if (i === state.currentSection && state.unlocked[i]) {
+        tab.classList.add('active');
+      } else if (state.unlocked[i]) {
+        tab.classList.add('available');
+      } else {
+        tab.classList.add('locked');
+      }
+    }
+    // Update progress
+    const done = state.done.filter(Boolean).length;
+    document.getElementById('global-progress').textContent = done + ' / 4 parties';
+    document.getElementById('progress-fill').style.width = (done / 4 * 100) + '%';
+  }
+
+  function goToSection(idx) {
+    if (!state.unlocked[idx]) return;
+    state.currentSection = idx;
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + idx).classList.add('active');
+    updateTabs();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  function answer(partIdx, qIdx, isCorrect, btn) {
+    if (state.answered[partIdx][qIdx]) return;
+    state.answered[partIdx][qIdx] = true;
+
+    const card = document.getElementById('q' + partIdx + '-' + qIdx);
+    const allBtns = card.querySelectorAll('.option-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      card.classList.add('answered-correct');
+      state.scores[partIdx]++;
+    } else {
+      btn.classList.add('wrong');
+      card.classList.add('answered-wrong');
+      // highlight correct
+      allBtns.forEach(b => {
+        const clickStr = b.getAttribute('onclick');
+        if (clickStr && clickStr.includes('true')) b.classList.add('correct');
+      });
+    }
+
+    document.getElementById('score-' + partIdx).textContent = state.scores[partIdx];
+
+    // Check if all answered
+    if (state.answered[partIdx].every(Boolean)) {
+      setTimeout(() => showResult(partIdx), 400);
+    }
+  }
+
+  function showResult(partIdx) {
+    const score = state.scores[partIdx];
+    const banner = document.getElementById('result-' + partIdx);
+    const retry = document.getElementById('retry-' + partIdx);
+    const next = document.getElementById('next-' + partIdx);
+
+    banner.classList.add('show');
+
+    if (score === 5) {
+      banner.className = 'result-banner show success';
+      banner.innerHTML = '🎉 Excellent ! Score parfait : 5/5<br><small>Tu peux passer à la partie suivante.</small>';
+      next.style.display = 'inline-block';
+      state.done[partIdx] = true;
+      updateTabs();
+    } else {
+      banner.className = 'result-banner show fail';
+      banner.innerHTML = `⚠ Score : ${score}/5 — Tu dois obtenir 5/5 pour continuer.<br><small>Relis le cours et réessaie !</small>`;
+      retry.style.display = 'inline-block';
+    }
+  }
+
+  function retryQuiz(partIdx) {
+    // Reset state
+    state.scores[partIdx] = 0;
+    state.answered[partIdx] = [false,false,false,false,false];
+    document.getElementById('score-' + partIdx).textContent = '0';
+
+    const banner = document.getElementById('result-' + partIdx);
+    banner.classList.remove('show');
+    document.getElementById('retry-' + partIdx).style.display = 'none';
+    document.getElementById('next-' + partIdx).style.display = 'none';
+
+    // Reset cards
+    for (let q = 0; q < 5; q++) {
+      const card = document.getElementById('q' + partIdx + '-' + q);
+      card.className = 'question-card';
+      const btns = card.querySelectorAll('.option-btn');
+      btns.forEach(b => {
+        b.disabled = false;
+        b.classList.remove('correct', 'wrong');
+      });
+    }
+  }
+
+  function nextSection(partIdx) {
+    const next = partIdx + 1;
+    if (next < 4) {
+      state.unlocked[next] = true;
+      const tab = document.getElementById('tab-' + next);
+      tab.className = 'part-tab available';
+      goToSection(next);
+    }
+  }
+
+  function showCongrats() {
+    state.done[3] = true;
+    updateTabs();
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-congrats').classList.add('active');
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('global-progress').textContent = '4 / 4 parties';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  updateTabs();
+</script>
+</body>
+</html>
